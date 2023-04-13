@@ -21,6 +21,33 @@ import fiona
 import shapely
 import rasterstats
 
+def options_from_type(the_type):
+
+    match the_type:
+        case 'black':
+            return {'c':'black'}
+        case 'blue':
+            return {'c':'blue'}
+        case 'green':
+            return {'c':'green'}
+        case 'lift':
+            return {'c':'red','linestyle':'dashed'}
+        case 'chute':
+            return {'c':'purple'}
+        case 'road':
+            return {'c':'black','linewidth':'5'}
+        case _:
+            print(the_type)
+            return {'c':'pink','linewidth':'10'}
+
+
+available_contour_colors = ['green','black','red','blue','darkorange']
+n_available_contour_colors = len(available_contour_colors)
+
+algo_contour = 'mpl2005'
+algo_contour = 'mpl2014'
+algo_contour = 'serial'
+algo_contour = 'threaded'
 
 img_ext_list = ['.png','.pdf']
 
@@ -31,9 +58,17 @@ geo_data_folder = os.path.join(base_folder,'geo_data')
 img_filename = os.path.join(geo_data_folder,'DEM/AP_02191_FBS_F0770_RT1/AP_02191_FBS_F0770_RT1.dem.tif')
 
 model_bou_filename = os.path.join(geo_data_folder,'shp/model_bounds.shp')
+rose_tracks_filename = os.path.join(geo_data_folder,'shp/Rose_tracks.shp')
+alignement_pts_filename = os.path.join(geo_data_folder,'shp/alignement_vertical.shp')
 
-DoVideo = True
-# DoVideo = False
+# DoVideo = True
+DoVideo = False
+
+DoA4 = True
+# DoA4 = False
+
+DoA2 = True
+# DoA2 = False
 
 # ipoly = 0     # Portrait
 ipoly = 1       # Landscape
@@ -81,87 +116,102 @@ with rio.open(img_filename) as img_open:
 
     xmin,xmax,ymin,ymax = rio.plot.plotting_extent(img_open)
 
-    zoom_imin = m.floor(nx * (zoom_xmin - xmin) / (xmax - xmin))
-    zoom_imax = m.ceil(nx * (zoom_xmax - xmin) / (xmax - xmin))
-    zoom_jmin = m.floor(ny * (zoom_ymin - ymin) / (ymax - ymin))
-    zoom_jmax = m.ceil(ny * (zoom_ymax - ymin) / (ymax - ymin))
+    rose_tracks = gpd.read_file(rose_tracks_filename)
+    rose_tracks_match = rose_tracks.to_crs(img_open.crs)
 
-    zoom_nx = zoom_imax - zoom_imin
-    zoom_ny = zoom_jmax - zoom_jmin
+    n_tracks = rose_tracks_match.geometry.shape[0]
 
-    # print(xmin,xmax,ymin,ymax)
-    # print(zoom_jmin,zoom_jmax,zoom_imin,zoom_imax)
+    alignement_pts = gpd.read_file(alignement_pts_filename)
+    alignement_pts_match = alignement_pts.to_crs(img_open.crs)
 
-    img = np.flip(img_tot,axis=0)[zoom_jmin:zoom_jmax,zoom_imin:zoom_imax]
+    n_alignement_pts = alignement_pts_match.geometry.shape[0]
 
-    # print(zoom_nx,zoom_ny)
-    # print(img.shape)
 
-    # print('dtype = ',img.dtype)
+zoom_imin = m.floor(nx * (zoom_xmin - xmin) / (xmax - xmin))
+zoom_imax = m.ceil(nx * (zoom_xmax - xmin) / (xmax - xmin))
+zoom_jmin = m.floor(ny * (zoom_ymin - ymin) / (ymax - ymin))
+zoom_jmax = m.ceil(ny * (zoom_ymax - ymin) / (ymax - ymin))
 
-    minval = img.min()
-    maxval = img.max()
+zoom_nx = zoom_imax - zoom_imin
+zoom_ny = zoom_jmax - zoom_jmin
 
-    # minval = 2400
-    # maxval = 3000
-    # 
-    minval = 2360
-    maxval = 2960
+# print(xmin,xmax,ymin,ymax)
+# print(zoom_jmin,zoom_jmax,zoom_imin,zoom_imax)
 
-    # 
-    # print('minval = ',minval)
-    # print('maxval = ',maxval)
+img = np.flip(img_tot,axis=0)[zoom_jmin:zoom_jmax,zoom_imin:zoom_imax]
 
-    xmin,xmax,ymin,ymax = rio.plot.plotting_extent(img_open)
-    
-    # print('xmin = ',xmin)
-    # print('xmax = ',xmax)
-    # print('ymin = ',ymin)
-    # print('ymax = ',ymax)
+# print(zoom_nx,zoom_ny)
+# print(img.shape)
 
-    x = np.linspace(zoom_xmin, zoom_xmax, zoom_nx)
-    y = np.linspace(zoom_ymin, zoom_ymax, zoom_ny)
-    X, Y = np.meshgrid(x, y)
+# print('dtype = ',img.dtype)
 
-#     print(zoom_nx)
-#     print(x.shape)
+minval = img.min()
+maxval = img.max()
+
+# minval = 2400
+# maxval = 3000
 # 
-#     exit()
-#     
-    n_levels = 100 +1
-    levels =  np.linspace(minval, maxval, n_levels)
-
-    real_height = zoom_ymax-zoom_ymin
-    real_width = zoom_xmax-zoom_xmin
-    real_thick = maxval-minval
+minval = 2340
+maxval = 2960
 
 
 
-    print("real height = ",real_height)
-    print("real width = ",real_width)
-    print("real thickness = ",real_thick)
+x = np.linspace(zoom_xmin, zoom_xmax, zoom_nx)
+y = np.linspace(zoom_ymin, zoom_ymax, zoom_ny)
+X, Y = np.meshgrid(x, y)
 
-    scale = 0.5 * (real_height/model_height + real_width/model_width)
+real_height = zoom_ymax-zoom_ymin
+real_width = zoom_xmax-zoom_xmin
+real_thick = maxval-minval
 
-    print('scale = ',scale)
+print("real height = ",real_height)
+print("real width = ",real_width)
+print("real thickness = ",real_thick)
 
-    model_thick = real_thick / scale
+scale = 0.5 * (real_height/model_height + real_width/model_width)
 
-    print('model thickness (mm) = ', 1000 * model_thick)
+print('scale = ',scale)
 
-    linewidths = 0.5
+model_thick = real_thick / scale
+model_thick_mm = 1000 * model_thick
 
+
+print('model thickness (mm) = ', model_thick_mm)
+
+
+n_levels = int(model_thick_mm) +1
+levels =  np.linspace(minval, maxval, n_levels)
+
+linewidths = 0.5
+available_contour_colors = [available_contour_colors[i % n_available_contour_colors] for i in range(n_levels)]
+
+# print(n_levels)
+# print(levels.shape)
+
+
+
+
+if DoA4 :
 
     fig = plt.figure()
     fig.set_size_inches(fig_size)
     ax = plt.axes()
 
-    ax.pcolor(X, Y, img, vmin = minval, vmax = maxval)
+    # for i,track in rose_tracks_match.iterrows():
+    #     opt = options_from_type(track.Type)
+    #     ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
 
-    CS = ax.contour(X, Y, img, colors = 'k', levels = levels, linewidths = linewidths)
+    ax.scatter(alignement_pts_match.geometry.x, alignement_pts_match.geometry.y, c = 'lightcoral')
+
+    # ax.pcolor(X, Y, img, vmin = minval, vmax = maxval)
+
+    CS = ax.contour(X, Y, img, levels = levels, linewidths = linewidths, colors = available_contour_colors, algorithm = algo_contour)
     # ax.clabel(CS, inline=True, fontsize=5)
 
-    ax.axis('equal')
+
+    ax.set_xlim((zoom_xmin, zoom_xmax))
+    ax.set_ylim((zoom_ymin, zoom_ymax))
+
     ax.axis('off')
     fig.tight_layout(pad=0)
 
@@ -171,7 +221,7 @@ with rio.open(img_filename) as img_open:
 
     plt.close()
 
-
+if DoA2 :
     pdf_filename = os.path.join(img_output_folder,'contour_multipage.pdf')
     with PdfPages(pdf_filename) as pdf:
 
@@ -190,6 +240,10 @@ with rio.open(img_filename) as img_open:
                 jp_min =  zoom_jy      * dj
                 jp_max = (zoom_jy + 1) * dj + 1
 
+                zoom_xmin_A2 = zoom_xmin +  zoom_ix      * (zoom_xmax - zoom_xmin) / nx_pages
+                zoom_xmax_A2 = zoom_xmin + (zoom_ix + 1) * (zoom_xmax - zoom_xmin) / nx_pages
+                zoom_ymin_A2 = zoom_ymin +  zoom_jy      * (zoom_ymax - zoom_ymin) / ny_pages
+                zoom_ymax_A2 = zoom_ymin + (zoom_jy + 1) * (zoom_ymax - zoom_ymin) / ny_pages
 
                 X_zoom = X[jp_min:jp_max,ip_min:ip_max]
                 Y_zoom = Y[jp_min:jp_max,ip_min:ip_max]
@@ -198,13 +252,19 @@ with rio.open(img_filename) as img_open:
                 poly_color = '#6699cc'
                 # ax.add_patch(PolygonPatch(bou_outline_match.geometry[ipoly], fc=poly_color, ec=poly_color, alpha=0.5, zorder=2 ))
 
-                ax.pcolor(X_zoom, Y_zoom, img_zoom, vmin = minval, vmax = maxval)
+                # ax.pcolor(X_zoom, Y_zoom, img_zoom, vmin = minval, vmax = maxval)
 
-                CS = ax.contour(X_zoom, Y_zoom, img_zoom, colors = 'k', levels = levels, linewidths = linewidths)
+                CS = ax.contour(X_zoom, Y_zoom, img_zoom, levels = levels, linewidths = linewidths, colors = available_contour_colors, algorithm = algo_contour)
                 # ax.clabel(CS, inline=True, fontsize=5)
 
+                # for i,track in rose_tracks_match.iterrows():
+                #     opt = options_from_type(track.Type)
+                #     ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
 
-                ax.axis('equal')
+                ax.scatter(alignement_pts_match.geometry.x, alignement_pts_match.geometry.y, c = 'lightcoral')
+
+                ax.set_xlim((zoom_xmin_A2, zoom_xmax_A2))
+                ax.set_ylim((zoom_ymin_A2, zoom_ymax_A2))
                 ax.axis('off')
                 fig.tight_layout(pad=0)
 
@@ -213,35 +273,33 @@ with rio.open(img_filename) as img_open:
 
 
 
-    if DoVideo:
+if DoVideo:
 
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"},figsize=(12, 12))
-        ax.plot_wireframe(X, Y, img, rstride=5, cstride=5)
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"},figsize=(24, 24))
+    ax.plot_wireframe(X, Y, img, rstride=5, cstride=5)
 
-#         max_range = np.array([X.max()-X.min(), Y.max()-Y.min(), img.max()-img.min()]).max() / 2.0
-# 
-#         mid_x = (X.max()+X.min()) * 0.5
-#         mid_y = (Y.max()+Y.min()) * 0.5
-#         mid_z = (img.max()+img.min()) * 0.5
-#         ax.set_xlim(mid_x - max_range, mid_x + max_range)
-#         ax.set_ylim(mid_y - max_range, mid_y + max_range)
-#         ax.set_zlim(mid_z - max_range, mid_z + max_range)
+    max_range = np.array([X.max()-X.min(), Y.max()-Y.min(), img.max()-img.min()]).max() / 2.0
+    mid_x = (X.max()+X.min()) * 0.5
+    mid_y = (Y.max()+Y.min()) * 0.5
+    mid_z = (img.max()+img.min()) * 0.5
+    ax.set_xlim(mid_x - max_range, mid_x + max_range)
+    ax.set_ylim(mid_y - max_range, mid_y + max_range)
+    ax.set_zlim(mid_z - max_range, mid_z + max_range)
+    ax.set_box_aspect([1,1,1])
 
 
-        # ax.set_box_aspect([1,1,1])
-        ax.axis('off')
+    ax.axis('off')
 
-        def init():
-            return fig,
+    def init():
+        return fig,
 
-        def animate(i):
-            ax.view_init(elev=10., azim=i)
-            # ax.view_init(azim=i)
-            return fig,
+    def animate(i):
+        ax.view_init(elev=10., azim=i)
+        # ax.view_init(azim=i)
+        return fig,
 
-        # Animate
-        anim = animation.FuncAnimation(fig, animate, init_func=init,
-                                    frames=360, interval=20, blit=True)
-        # Save
-        video_filename = os.path.join(img_output_folder,'3d.mp4')
-        anim.save(video_filename, fps=30, extra_args=['-vcodec', 'libx264'])
+    # Animate
+    anim = animation.FuncAnimation(fig, animate, init_func=init,frames=360, interval=20, blit=True)
+    # Save
+    video_filename = os.path.join(img_output_folder,'3d.mp4')
+    anim.save(video_filename, fps=30, extra_args=['-vcodec', 'libx264'])
