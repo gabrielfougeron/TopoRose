@@ -41,7 +41,17 @@ def options_from_type(the_type):
             return {'c':'pink','linewidth':'10'}
 
 
-available_contour_colors = ['green','black','red','blue','darkorange']
+# available_contour_colors = ['green','black','red','blue','darkorange']
+available_contour_colors = [
+    'tab:blue',
+    'tab:orange',
+    'tab:green',
+    'tab:red',
+    'tab:purple',
+    'tab:brown',
+    'tab:pink',
+    'k',
+]
 n_available_contour_colors = len(available_contour_colors)
 
 algo_contour = 'mpl2005'
@@ -200,9 +210,9 @@ if DoA4 :
     fig.set_size_inches(fig_size)
     ax = plt.axes()
 
-    for i,track in rose_tracks_match.iterrows():
-        opt = options_from_type(track.Type)
-        ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
+    # for i,track in rose_tracks_match.iterrows():
+    #     opt = options_from_type(track.Type)
+    #     ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
 
     ax.scatter(alignement_pts_match.geometry.x, alignement_pts_match.geometry.y, c = 'lightcoral')
 
