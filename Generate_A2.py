@@ -136,7 +136,24 @@ with rio.open(img_filename) as img_open:
 
     n_alignement_pts = alignement_pts_match.geometry.shape[0]
 
-    print("Number of alignement points = ",n_alignement_pts)
+
+
+print("Number of alignement points = ",n_alignement_pts)
+print('')
+print('Description of alignement points :')
+
+for ipt in range(n_alignement_pts):
+
+    xx = 100 * model_width  * (alignement_pts_match.geometry.x[ipt] - zoom_xmin) / (zoom_xmax - zoom_xmin)
+    yy = 100 * model_height * (alignement_pts_match.geometry.y[ipt] - zoom_ymin) / (zoom_ymax - zoom_ymin)
+
+    print('')
+    print(ipt)
+    print(xx)
+    print(yy)
+    # alignement_pts_match.geometry.y
+
+
 
 
 zoom_imin = m.floor(nx * (zoom_xmin - xmin) / (xmax - xmin))
@@ -215,6 +232,12 @@ if DoA4 :
     #     ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
 
     ax.scatter(alignement_pts_match.geometry.x, alignement_pts_match.geometry.y, c = 'lightcoral')
+    # ax.scatter([zoom_xmin], [zoom_ymin], c = 'k',s=[100])
+
+    for ipt in range(n_alignement_pts):
+        ax.text(alignement_pts_match.geometry.x[ipt],alignement_pts_match.geometry.y[ipt],str(ipt))
+
+
 
     # ax.pcolor(X, Y, img, vmin = minval, vmax = maxval)
 
