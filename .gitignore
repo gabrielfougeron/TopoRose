@@ -1,2 +1,3 @@
 geo_data/DEM/*
 output/*
+*.png

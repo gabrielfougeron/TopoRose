@@ -126,6 +126,8 @@ with rio.open(img_filename) as img_open:
 
     n_alignement_pts = alignement_pts_match.geometry.shape[0]
 
+    print("Number of alignement points = ",n_alignement_pts)
+
 
 zoom_imin = m.floor(nx * (zoom_xmin - xmin) / (xmax - xmin))
 zoom_imax = m.ceil(nx * (zoom_xmax - xmin) / (xmax - xmin))
@@ -189,6 +191,7 @@ available_contour_colors = [available_contour_colors[i % n_available_contour_col
 # print(levels.shape)
 
 
+poly_color = '#6699cc'
 
 
 if DoA4 :
@@ -197,9 +200,9 @@ if DoA4 :
     fig.set_size_inches(fig_size)
     ax = plt.axes()
 
-    # for i,track in rose_tracks_match.iterrows():
-    #     opt = options_from_type(track.Type)
-    #     ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
+    for i,track in rose_tracks_match.iterrows():
+        opt = options_from_type(track.Type)
+        ax.plot(track.geometry.xy[0],track.geometry.xy[1],**opt)
 
     ax.scatter(alignement_pts_match.geometry.x, alignement_pts_match.geometry.y, c = 'lightcoral')
 
@@ -249,7 +252,6 @@ if DoA2 :
                 Y_zoom = Y[jp_min:jp_max,ip_min:ip_max]
                 img_zoom = img[jp_min:jp_max,ip_min:ip_max]
 
-                poly_color = '#6699cc'
                 # ax.add_patch(PolygonPatch(bou_outline_match.geometry[ipoly], fc=poly_color, ec=poly_color, alpha=0.5, zorder=2 ))
 
                 # ax.pcolor(X_zoom, Y_zoom, img_zoom, vmin = minval, vmax = maxval)
