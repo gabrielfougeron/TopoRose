@@ -1,3 +1,5 @@
 geo_data/DEM/*
 output/*
 *.png
+*.pyc
+__pycache__/*
