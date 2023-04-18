@@ -54,10 +54,10 @@ available_contour_colors = [
 ]
 n_available_contour_colors = len(available_contour_colors)
 
-algo_contour = 'mpl2005'
+# algo_contour = 'mpl2005'
 algo_contour = 'mpl2014'
-algo_contour = 'serial'
-algo_contour = 'threaded'
+# algo_contour = 'serial'
+# algo_contour = 'threaded'
 
 img_ext_list = ['.png','.pdf']
 
