@@ -3,12 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - python
-  - numpy
+  - pandas
   - matplotlib
   - scipy
-  - pandas
+  - cython
+  - ffmpeg
+  - pip
   - geopandas
   - rasterio
-  - fiona
-  - shapely
   - rasterstats
