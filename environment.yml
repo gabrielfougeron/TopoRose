@@ -1,0 +1,14 @@
+name: toporose
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - pandas
+  - matplotlib
+  - scipy
+  - cython
+  - ffmpeg
+  - pip
+  - geopandas
+  - rasterio
+  - rasterstats
